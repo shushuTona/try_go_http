@@ -24,3 +24,18 @@ func main() {
 
 	server.ListenAndServe()
 }
+
+func NewServeMux() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "test\n")
+	})
+
+	server := http.Server{
+		Addr:    ":8000",
+		Handler: mux,
+	}
+
+	server.ListenAndServe()
+}

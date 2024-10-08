@@ -18,8 +18,24 @@
 
 ### ServeMux ・ DefaultServeMux
 
-- `http.Server` の `Handler` フィールドが `nil` の場合、 `http.DefaultServeMux` （= `ServeMux` :  `mutex` を内包していて複数のパスを登録できるようになっている）が使用される。
+- `http.Server` の `Handler` フィールドが `nil` の場合、 `http.DefaultServeMux` （= `http.ServeMux` :  `mutex` を内包していて複数のパスを登録できるようになっている）が使用される。
     - （`serverHandler.ServeHTTP` で `Handler` が `nil` の場合 `http.DefaultServeMux` を使用してサーバーを起動している）
+
+- `http.ServeMux` は `ServeHTTP(w ResponseWriter, r *Request)` が実装されている（＝ `http.Handler` インターフェースを満たす）ため、下記のように `http.Server` の `Handler` に指定して使用する。
+    ```go
+        mux := http.NewServeMux()
+
+        mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+            fmt.Fprintf(w, "test\n")
+        })
+
+        server := http.Server{
+            Addr:    ":8000",
+            Handler: mux,
+        }
+
+        server.ListenAndServe()
+    ```
 
 ### パスの登録方法
 
