@@ -2,19 +2,18 @@
 
 [net/http](https://pkg.go.dev/net/http) パッケージを使用したWebサーバーの実装。
 
-`http.Server` 
+`http.Server` がサーバー自体の構造体で、 `Handler` フィールドに `http.Handler` インターフェースを満たす構造体（＝ `ServeHTTP` を実装している構造体）を定義する。
 
-`func (srv *http.Server) ListenAndServe() error` 
+### TODO
 
+下記の流れ確認する。
+
+1. `func (srv *http.Server) ListenAndServe() error` 
 1. `net.Listen("tcp", addr)` で `net.Listener` 生成
 1. `func (srv *Server) Serve(l net.Listener) error` でサーバー起動
 1. `func (c *conn) serve(ctx context.Context)` 
 
-## 最低限のWebサーバーを起動
-
-- `http.Server` の `Handler` フィールドに `http.Handler` インターフェースを満たす構造体（＝ `ServeHTTP` を実装している構造体）を定義することで、どのパスにも同じ処理を実行するWebサーバーが立ち上がる。
-
-## 複数のリスナーを設定する
+## ハンドラを設定する
 
 ### ServeMux ・ DefaultServeMux
 
