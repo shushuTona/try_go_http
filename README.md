@@ -44,3 +44,133 @@
 （`http.DefaultServeMux` への登録方法は `http.Handle` と同じ）
 
     - → `http.Handle` の方がハンドラ指定が `http.Handler` インターフェースで抽象化されているから、テストなどがしやすそう。
+
+--- 
+
+## request
+
+```go
+	mux.HandleFunc("/checkreq", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+		}
+
+		fmt.Printf("Method: %#v\n", r.Method)
+		fmt.Printf("URL: %#v\n", r.URL)
+		fmt.Printf("Proto: %#v\n", r.Proto)
+		fmt.Printf("Header: %#v\n", r.Header)
+		fmt.Printf("Body: %#v\n", string(body))
+		fmt.Printf("ContentLength: %#v\n", r.ContentLength)
+		fmt.Printf("Host: %#v\n", r.Host)
+		fmt.Printf("Pattern: %#v\n", r.Pattern)
+		fmt.Printf("RemoteAddr: %#v\n", r.RemoteAddr)
+		fmt.Printf("RequestURI: %#v\n", r.RequestURI)
+	})
+```
+
+## GET
+
+```bash
+curl http://localhost:8000/checkreq
+```
+
+```
+Method: "GET"
+URL: &url.URL{Scheme:"", Opaque:"", User:(*url.Userinfo)(nil), Host:"", Path:"/checkreq", RawPath:"", OmitHost:false, ForceQuery:false, RawQuery:"", Fragment:"", RawFragment:""}
+Proto: "HTTP/1.1"
+Header: http.Header{"Accept":[]string{"*/*"}, "User-Agent":[]string{"curl/7.88.1"}}
+Body: ""
+ContentLength: 0
+Host: "localhost:8000"
+Pattern: "/checkreq"
+RemoteAddr: "127.0.0.1:49124"
+RequestURI: "/checkreq"
+```
+
+### POST
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"Name":"tanaka", "Age":"20"}' localhost:8000/checkreq
+```
+
+```
+Method: "POST"
+URL: &url.URL{Scheme:"", Opaque:"", User:(*url.Userinfo)(nil), Host:"", Path:"/checkreq", RawPath:"", OmitHost:false, ForceQuery:false, RawQuery:"", Fragment:"", RawFragment:""}
+Proto: "HTTP/1.1"
+Header: http.Header{"Accept":[]string{"*/*"}, "Content-Length":[]string{"29"}, "Content-Type":[]string{"application/json"}, "User-Agent":[]string{"curl/7.88.1"}}
+Body: "{\"Name\":\"tanaka\", \"Age\":\"20\"}"
+ContentLength: 29
+Host: "localhost:8000"
+Pattern: "/checkreq"
+RemoteAddr: "127.0.0.1:36822"
+RequestURI: "/checkreq"
+```
+
+### path parameter
+
+Go 1.22で [`http.Request.PathValue`](https://pkg.go.dev/net/http#Request.PathValue) が追加されたことでWebフレームワークやルーティングライブラリを使用しなくてもパスパラメータを簡単に取得できるようになった。
+
+```go
+	mux.HandleFunc("/page/{id}", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("r.PathValue: %s\n", r.PathValue("id"))
+		fmt.Printf("Method: %#v\n", r.Method)
+		fmt.Printf("URL: %#v\n", r.URL)
+		fmt.Printf("Proto: %#v\n", r.Proto)
+		fmt.Printf("Header: %#v\n", r.Header)
+		fmt.Printf("ContentLength: %#v\n", r.ContentLength)
+		fmt.Printf("Host: %#v\n", r.Host)
+		fmt.Printf("Pattern: %#v\n", r.Pattern)
+		fmt.Printf("RemoteAddr: %#v\n", r.RemoteAddr)
+		fmt.Printf("RequestURI: %#v\n", r.RequestURI)
+	})
+```
+
+```bash
+curl http://localhost:8000/page/100
+```
+
+```
+r.PathValue: 100
+Method: "GET"
+URL: &url.URL{Scheme:"", Opaque:"", User:(*url.Userinfo)(nil), Host:"", Path:"/page/100", RawPath:"", OmitHost:false, ForceQuery:false, RawQuery:"", Fragment:"", RawFragment:""}
+Proto: "HTTP/1.1"
+Header: http.Header{"Accept":[]string{"*/*"}, "User-Agent":[]string{"curl/7.88.1"}}
+ContentLength: 0
+Host: "localhost:8000"
+Pattern: "/page/{id}"
+RemoteAddr: "127.0.0.1:51772"
+RequestURI: "/page/100"
+```
+
+### path query
+
+パスに指定されているクエリは `http.Request` の `URL` フィールドを使用して下記の流れで取得する。
+
+```go
+	mux.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("r.URL.Query(): %#v\n", r.URL.Query())
+		fmt.Printf("r.URL.Query() query1: %#v\n", r.URL.Query().Get("query1"))
+		fmt.Printf("r.URL.Query() query2: %#v\n", r.URL.Query().Get("query2"))
+		PrintRequest(r)
+	})
+```
+
+```bash
+curl "http://localhost:8000/query?query1=1&query2=2"
+```
+
+```
+r.URL.Query(): url.Values{"query1":[]string{"1"}, "query2":[]string{"2"}}
+r.URL.Query() query1: "1"
+r.URL.Query() query2: "2"
+Method: "GET"
+URL: &url.URL{Scheme:"", Opaque:"", User:(*url.Userinfo)(nil), Host:"", Path:"/query", RawPath:"", OmitHost:false, ForceQuery:false, RawQuery:"query1=1&query2=2", Fragment:"", RawFragment:""}
+Proto: "HTTP/1.1"
+Header: http.Header{"Accept":[]string{"*/*"}, "User-Agent":[]string{"curl/7.88.1"}}
+ContentLength: 0
+Host: "localhost:8000"
+Pattern: "/query"
+RemoteAddr: "127.0.0.1:59506"
+RequestURI: "/query?query1=1&query2=2"
+```
