@@ -13,7 +13,8 @@ func main() {
 	})
 
 	mux.HandleFunc("/serheader", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Custom-Header", "test")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "{\"id\": 100, \"name\": \"test\"}")
 	})
