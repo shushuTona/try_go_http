@@ -47,7 +47,7 @@
 
 --- 
 
-## request
+## Request
 
 ```go
 	mux.HandleFunc("/checkreq", func(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,7 @@
 	})
 ```
 
-## GET
+### GET
 
 ```bash
 curl http://localhost:8000/checkreq
@@ -173,4 +173,54 @@ Host: "localhost:8000"
 Pattern: "/query"
 RemoteAddr: "127.0.0.1:59506"
 RequestURI: "/query?query1=1&query2=2"
+```
+
+## Response
+
+ハンドラ内で使用することができる `http.ResponseWriter` は `io.Writer` を満たしているので、下記のように一般的な書き込み処理を使用することでレスポンス内容を生成することができる。
+
+```go
+	mux.HandleFunc("/checkresponse", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "checkresponse\n")
+	})
+```
+
+```bash
+curl -D - -X POST -H "Content-Type: application/json" -d '{"Name":"tanaka", "Age":"20"}' localhost:8000/checkresponse
+```
+
+```
+HTTP/1.1 200 OK
+Date: Sat, 02 Nov 2024 10:00:18 GMT
+Content-Length: 14
+Content-Type: text/plain; charset=utf-8
+
+checkresponse
+```
+
+### Header
+
+`w.Header()` で取得した `http.Header` の `Set` メソッドでレスポンスヘッダーを設定する。
+
+```go
+	mux.HandleFunc("/setheader", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Custom-Header", "test")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "{\"id\": 100, \"name\": \"test\"}")
+	})
+```
+
+```bash
+curl -D - -X POST -H "Content-Type: application/json" -d '{"Name":"tanaka", "Age":"20"}' localhost:8000/setheader
+```
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Custom-Header: test
+Date: Sat, 02 Nov 2024 10:00:36 GMT
+Content-Length: 28
+
+{"id": 100, "name": "test"}
 ```

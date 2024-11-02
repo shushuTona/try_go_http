@@ -12,7 +12,7 @@ func main() {
 		fmt.Fprint(w, "checkresponse\n")
 	})
 
-	mux.HandleFunc("/serheader", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/setheader", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Header().Set("Custom-Header", "test")
 		w.WriteHeader(http.StatusOK)
