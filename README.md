@@ -316,3 +316,52 @@ Date: Sat, 02 Nov 2024 14:51:55 GMT
 Content-Length: 9
 Content-Type: text/plain; charset=utf-8
 ```
+
+## Middleware
+
+`http.Handler` を下記のように入れ子にすることで指定の処理の前後に処理を差し込むことができる。
+（ `ServeHTTP` メソッドを実行するために、エンドポイントの実処理にあたるハンドラ関数（例では `basepathHandleFunc` ）を `http.HandlerFunc` 型にキャストしてから引数に設定する）
+
+```go
+func middlewareHandleFunc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("middlewareHandleFunc start: %s\n", r.URL)
+
+		next.ServeHTTP(w, r)
+
+		fmt.Printf("middlewareHandleFunc end: %s\n", r.URL)
+	})
+}
+
+func basepathHandleFunc(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("basepath response\n"))
+}
+
+func main() {
+	mux := http.NewServeMux()
+
+	mux.Handle("/basepath", middlewareHandleFunc(http.HandlerFunc(basepathHandleFunc)))
+
+	http.ListenAndServe(":8000", mux)
+}
+```
+
+```bash
+curl -X Get -D - localhost:8000/basepath
+```
+
+client側
+```
+HTTP/1.1 200 OK
+Date: Sat, 02 Nov 2024 15:28:22 GMT
+Content-Length: 18
+Content-Type: text/plain; charset=utf-8
+
+basepath response
+```
+
+server側
+```
+MiddlewareHandleFunc start: /basepath
+MiddlewareHandleFunc end: /basepath
+```
