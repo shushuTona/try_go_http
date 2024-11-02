@@ -224,3 +224,95 @@ Content-Length: 28
 
 {"id": 100, "name": "test"}
 ```
+
+## cookie
+
+### Request
+
+`r.Cookie` メソッドでcookie名を指定して `*http.Cookie` を取得する。
+
+```go
+	mux.HandleFunc("/checkcookie", func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("cookie")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error: not found cookie"), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprintf(w, "cookie: %#v\n", cookie)
+	})
+```
+
+```bash
+curl -X Get --cookie 'cookie="XXXXX"' -D - localhost:8000/checkcookie
+```
+
+```bash
+HTTP/1.1 200 OK
+Date: Sat, 02 Nov 2024 14:12:56 GMT
+Content-Length: 263
+Content-Type: text/plain; charset=utf-8
+
+cookie: &http.Cookie{Name:"cookie", Value:"XXXXX", Quoted:true, Path:"", Domain:"", Expires:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), RawExpires:"", MaxAge:0, Secure:false, HttpOnly:false, SameSite:0, Partitioned:false, Raw:"", Unparsed:[]string(nil)}
+```
+
+`r.Cookies` メソッドは `[]*http.Cookie` を取得することができる。
+
+```go
+	mux.HandleFunc("/checkcookies", func(w http.ResponseWriter, r *http.Request) {
+		cookies := r.Cookies()
+		response := ""
+		for _, cookie := range cookies {
+			response = fmt.Sprintf("%s%s: %s\n", response, cookie.Name, cookie.Value)
+		}
+
+		fmt.Fprintf(w, response)
+	})
+```
+
+```bash
+curl -X Get --cookie 'cookie="XXXXX";cookie2=YYYYY' -D - localhost:8000/checkcookies
+```
+
+```
+HTTP/1.1 200 OK
+Date: Sat, 02 Nov 2024 14:22:06 GMT
+Content-Length: 29
+Content-Type: text/plain; charset=utf-8
+
+cookie: XXXXX
+cookie2: YYYYY
+```
+
+### Response
+
+`http.ParseCookie` メソッドでcookieの文字列から `[]*http.Cookie` を生成して `http.SetCookie` メソッドでレスポンスにcookieを設定する。
+
+```go
+	mux.HandleFunc("/setcookie", func(w http.ResponseWriter, r *http.Request) {
+		cookies, err := http.ParseCookie("cookie=XXXXX; cookie2=YYYYY")
+		if err != nil {
+			http.Error(w, "cookie error", http.StatusInternalServerError)
+			return
+		}
+
+		for _, cookie := range cookies {
+			http.SetCookie(w, cookie)
+		}
+
+		fmt.Fprint(w, "setcookie")
+	})
+```
+
+```bash
+curl -X Get -D - localhost:8000/setcookie
+```
+
+```
+HTTP/1.1 200 OK
+Set-Cookie: cookie=XXXXX
+Set-Cookie: cookie2=YYYYY
+Date: Sat, 02 Nov 2024 14:51:55 GMT
+Content-Length: 9
+Content-Type: text/plain; charset=utf-8
+```
